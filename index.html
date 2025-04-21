@@ -306,8 +306,19 @@
             monthlyTotalSpan.textContent = (goodsTotal + shippingTotal).toFixed(2);
         }
 
-        
-    
+        form.addEventListener("submit", e => {
+            e.preventDefault();
+            const date = form.date.value;
+            const item = form.item.value;
+            const quantity = parseInt(form.quantity.value);
+            const arrivalDays = parseInt(form["arrival-days"].value) || 0;
+            const cost = parseFloat(form.cost.value);
+            const shipping = parseFloat(form.shipping.value) || 0;
+            const url = form.url.value;
+            if (!date || !item || isNaN(quantity) || isNaN(cost)) return alert("請確認必填欄位皆已填寫且格式正確");
+            allRecords.push({ date, item, quantity, arrivalDays, cost, shipping, url });
+            
+        });
 
         document.addEventListener("DOMContentLoaded", () => {
             generateMonthOptions();

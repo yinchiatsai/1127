@@ -307,15 +307,7 @@
         }
 
         
-            if (!itemHistory.has(item)) {
-                itemHistory.add(item);
-                const option = document.createElement("option");
-                option.value = item;
-                itemList.appendChild(option);
-            }
-            form.reset();
-            renderTable();
-        });
+    
 
         document.addEventListener("DOMContentLoaded", () => {
             generateMonthOptions();

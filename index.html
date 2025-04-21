@@ -18,7 +18,7 @@
     #month-filter, #search { width:100%; padding:0.5rem; border:1px solid #ccc; border-radius:5px; margin-bottom:0.5rem; }
     .summary { text-align:right; font-weight:bold; margin-bottom:0.5rem; }
     .record-list { flex:1; overflow-y:auto; background:white; padding:1rem; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.1); }
-    table { width:100%; border-collapse:collapse; table-layout:fixed; word-break:break-word; position:relative; }
+    table { width:100%; border-collapse:collapse; table-layout:fixed; word-break:break-word; }
     th, td { background:#f5f5f5; padding:0.5rem; border:1px solid #ddd; text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     table th:nth-child(2), table td:nth-child(2) { white-space:normal; word-break:break-word; overflow:visible; text-overflow:clip; }
     thead th { position:sticky; top:0; background:#f0f0f0; z-index:1; }
@@ -74,16 +74,8 @@
         <table id="records">
           <thead>
             <tr>
-              <th>購買日期</th>
-              <th>品項</th>
-              <th>數量</th>
-              <th>到貨天數</th>
-              <th>預估到貨日</th>
-              <th>成本</th>
-              <th>運費</th>
-              <th>網址/備註</th>
-              <th>已進貨</th>
-              <th>刪除</th>
+              <th>購買日期</th><th>品項</th><th>數量</th><th>到貨天數</th><th>預估到貨日</th>
+              <th>成本</th><th>運費</th><th>網址/備註</th><th>已進貨</th><th>刪除</th>
             </tr>
           </thead>
           <tbody></tbody>
@@ -102,9 +94,9 @@
     const itemList = document.getElementById("item-list");
     const searchInput = document.getElementById("search");
     const monthFilter = document.getElementById("month-filter");
-    const monthlyGoodsSpan = document.getElementById("monthly-goods");
-    const monthlyShippingSpan = document.getElementById("monthly-shipping");
-    const monthlyTotalSpan = document.getElementById("monthly-total");
+    const monthlyGoods = document.getElementById("monthly-goods");
+    const monthlyShipping = document.getElementById("monthly-shipping");
+    const monthlyTotal = document.getElementById("monthly-total");
 
     let allRecords = [];
     let lastDeleted = null;
@@ -112,14 +104,14 @@
 
     function generateMonthOptions() {
       monthFilter.innerHTML = "";
-      const allOpt = document.createElement("option");
-      allOpt.value = "all";
-      allOpt.textContent = "全部月份";
-      monthFilter.appendChild(allOpt);
+      const optAll = document.createElement("option");
+      optAll.value = "all";
+      optAll.textContent = "全部月份";
+      monthFilter.appendChild(optAll);
       const now = new Date();
       for (let i = 0; i < 12; i++) {
         const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        const m = String(d.getMonth()+1).padStart(2, "0");
+        const m = String(d.getMonth() + 1).padStart(2, "0");
         const opt = document.createElement("option");
         opt.value = `${d.getFullYear()}-${m}`;
         opt.textContent = opt.value;
@@ -130,22 +122,22 @@
 
     function renderTable() {
       tbody.innerHTML = "";
-      let goodsTotal = 0, shipTotal = 0;
+      let sumGoods = 0, sumShip = 0;
       const q = searchInput.value.toLowerCase();
       const sel = monthFilter.value;
-      allRecords.map((r,i)=>({...r,_i:i}))
-        .filter(r=> {
+      allRecords.map((r, i) => ({...r, idx: i}))
+        .filter(r => {
           const txt = Object.values(r).join(" ").toLowerCase();
-          return txt.includes(q) && (sel==="all"||r.date.startsWith(sel));
+          return txt.includes(q) && (sel === "all" || r.date.startsWith(sel));
         })
-        .forEach(r=>{
-          goodsTotal += r.cost*r.quantity;
-          shipTotal += r.shipping;
+        .forEach(r => {
+          sumGoods += r.cost * r.quantity;
+          sumShip += r.shipping;
           const est = r.arrivalDays
-            ? new Date(new Date(r.date).getTime()+r.arrivalDays*86400000).toISOString().slice(0,10)
+            ? new Date(new Date(r.date).getTime() + r.arrivalDays*86400000).toISOString().slice(0,10)
             : "";
           const tr = document.createElement("tr");
-          tr.innerHTML=`
+          tr.innerHTML = `
             <td title="${r.date}">${r.date.slice(5)}</td>
             <td>${r.item}</td>
             <td>${r.quantity}</td>
@@ -153,57 +145,64 @@
             <td title="${est}">${est.slice(5)}</td>
             <td>$${r.cost.toFixed(2)}</td>
             <td>$${r.shipping.toFixed(2)}</td>
-            <td>${r.url?(r.url.startsWith("http")?`<a href="${r.url}" target="_blank">查看</a>`:r.url.replace(/\n/g,"<br>")):""}</td>
+            <td>${r.url? (r.url.startsWith("http")? `<a href="${r.url}" target="_blank">查看</a>`: r.url.replace(/\n/g,"<br>")):""}</td>
             <td><input type="checkbox"></td>
-            <td><button class="delete-btn" data-i="${r._i}">刪除</button></td>
+            <td><button class="delete-btn" data-idx="${r.idx}">刪除</button></td>
           `;
           tbody.appendChild(tr);
-          tr.querySelector(".delete-btn").addEventListener("click",()=>{
-            lastDeleted=allRecords.splice(r._i,1)[0];
+          tr.querySelector(".delete-btn").addEventListener("click", () => {
+            lastDeleted = allRecords.splice(r.idx,1)[0];
             renderTable();
           });
-          const mapIdx={date:0,item:1,quantity:2,arrivalDays:3,cost:5,shipping:6,url:7};
-          Object.entries(mapIdx).forEach(([f,idx])=>{
-            const cell=tr.children[idx];
+
+          // 雙擊編輯功能，不變
+          const mapIdx = {date:0,item:1,quantity:2,arrivalDays:3,cost:5,shipping:6,url:7};
+          Object.entries(mapIdx).forEach(([f,ci]) => {
+            const cell = tr.children[ci];
             cell.addEventListener("dblclick",()=>{
-              const orig=r[f]||"";
-              const inp=document.createElement("input");
-              inp.type=f==="date"?"date":(typeof orig==="number"?"number":"text");
-              inp.value=orig;
-              inp.style.width="100%";
+              const orig = r[f]||"";
+              const inp = document.createElement("input");
+              inp.type = f==="date" ? "date" : (typeof orig==="number"?"number":"text");
+              inp.value = orig;
+              inp.style.width = "100%";
               inp.addEventListener("keydown",e=>{
                 if(e.key==="Enter") inp.blur();
-                if(e.key==="Escape") cell.innerHTML=orig;
+                if(e.key==="Escape") cell.innerHTML = orig;
               });
               inp.addEventListener("blur",()=>{
-                const v=inp.value;
-                r[f]=["cost","shipping","quantity","arrivalDays"].includes(f)?parseFloat(v):v;
+                const v = inp.value;
+                r[f] = ["cost","shipping","quantity","arrivalDays"].includes(f)? parseFloat(v):v;
                 renderTable();
               });
-              cell.innerHTML="";
+              cell.innerHTML = "";
               cell.appendChild(inp);
               inp.focus();
             });
           });
         });
-      monthlyGoodsSpan.textContent=goodsTotal.toFixed(2);
-      monthlyShippingSpan.textContent=shipTotal.toFixed(2);
-      monthlyTotalSpan.textContent=(goodsTotal+shipTotal).toFixed(2);
+
+      monthlyGoods.textContent   = sumGoods.toFixed(2);
+      monthlyShipping.textContent = sumShip.toFixed(2);
+      monthlyTotal.textContent    = (sumGoods+sumShip).toFixed(2);
     }
 
-    const scriptURL = "https://script.google.com/macros/s/AKfycbxUt-CEJUyeg3lOulA5VoaHIFebQcLFtC8eTWT-tTtFdmACe9l4ixsxsrvycJyFqbub_w/exec";
+    // 你的 Apps Script Web App URL
+    const rawURL = "https://script.google.com/macros/s/AKfycbxUt-CEJUyeg3lOulA5VoaHIFebQcLFtC8eTWT-tTtFdmACe9l4ixsxsrvycJyFqbub_w/exec";
+    // AllOrigins 免費代理前綴
+    const scriptURL = "https://api.allorigins.win/raw?url=" + encodeURIComponent(rawURL);
 
     async function loadRemoteData() {
       try {
         const res = await fetch(scriptURL);
         const data = await res.json();
-        allRecords = data.map(r=>({
-          date:r.date, item:r.item,
-          quantity:Number(r.quantity),
-          arrivalDays:Number(r.arrivalDays),
-          cost:Number(r.cost),
-          shipping:Number(r.shipping),
-          url:r.url
+        allRecords = data.map(r => ({
+          date: r.date,
+          item: r.item,
+          quantity: Number(r.quantity),
+          arrivalDays: Number(r.arrivalDays),
+          cost: Number(r.cost),
+          shipping: Number(r.shipping),
+          url: r.url
         }));
         renderTable();
       } catch(err) {
@@ -213,7 +212,7 @@
 
     form.addEventListener("submit", async e=>{
       e.preventDefault();
-      const record = {
+      const rec = {
         date: form.date.value,
         item: form.item.value,
         quantity: Number(form.quantity.value),
@@ -223,11 +222,10 @@
         url: form.url.value
       };
       try {
-        // 改用 no-cors + URLSearchParams 送出
         await fetch(scriptURL, {
           method: "POST",
           mode: "no-cors",
-          body: new URLSearchParams(record)
+          body: new URLSearchParams(rec)
         });
         form.reset();
         await loadRemoteData();
@@ -246,7 +244,7 @@
     function undoLastDelete(){
       if(!lastDeleted) return alert("沒有可復原的紀錄。");
       allRecords.push(lastDeleted);
-      lastDeleted=null;
+      lastDeleted = null;
       renderTable();
     }
   </script>

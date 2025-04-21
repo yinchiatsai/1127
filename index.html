@@ -8,7 +8,7 @@
     body { font-family: sans-serif; margin:0; padding:0; background:#f9f9f9; }
     h1 { text-align:center; margin:1rem; }
     .container { display:flex; flex-direction:row; height:calc(100vh - 80px); padding:0 1rem 1rem; gap:1rem; }
-    .form-section { flex:0 0 30%; background:white; padding:1rem; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.1); overflow-y:auto; height:100%; }
+    .form-section { flex:0 0 30%; background:white; padding:1rem; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.1); overflow-y:auto; }
     .form-group { display:flex; align-items:center; margin:0.5rem 0; }
     .form-group label { width:35%; font-weight:bold; }
     .form-group input, .form-group select { flex:1; padding:0.5rem; border:1px solid #ccc; border-radius:5px; background:#f8f8f8; }
@@ -20,7 +20,7 @@
     .record-list { flex:1; overflow-y:auto; background:white; padding:1rem; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.1); }
     table { width:100%; border-collapse:collapse; table-layout:fixed; word-break:break-word; }
     th, td { background:#f5f5f5; padding:0.5rem; border:1px solid #ddd; text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    table th:nth-child(2), table td:nth-child(2) { white-space:normal; word-break:break-word; overflow:visible; text-overflow:clip; }
+    table th:nth-child(2), table td:nth-child(2) { white-space:normal; word-break:break-word; }
     thead th { position:sticky; top:0; background:#f0f0f0; z-index:1; }
     tbody tr:hover { background:#f1f1f1; }
   </style>
@@ -87,20 +87,16 @@
     style="position:fixed;bottom:10px;left:10px;background:#ffc107;color:black;border:none;padding:8px 12px;border-radius:4px;cursor:pointer;">
     復原上一筆刪除
   </button>
-
   <script>
     const form = document.getElementById("purchase-form");
     const tbody = document.querySelector("#records tbody");
-    const itemList = document.getElementById("item-list");
     const searchInput = document.getElementById("search");
     const monthFilter = document.getElementById("month-filter");
     const monthlyGoods = document.getElementById("monthly-goods");
     const monthlyShipping = document.getElementById("monthly-shipping");
     const monthlyTotal = document.getElementById("monthly-total");
 
-    let allRecords = [];
-    let lastDeleted = null;
-    let itemHistory = new Set();
+    let allRecords = [], lastDeleted = null, itemHistory = new Set();
 
     function generateMonthOptions() {
       monthFilter.innerHTML = "";
@@ -109,35 +105,34 @@
       optAll.textContent = "全部月份";
       monthFilter.appendChild(optAll);
       const now = new Date();
-      for (let i = 0; i < 12; i++) {
-        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        const m = String(d.getMonth() + 1).padStart(2, "0");
+      for (let i=0; i<12; i++) {
+        const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+        const m = String(d.getMonth()+1).padStart(2,"0");
         const opt = document.createElement("option");
         opt.value = `${d.getFullYear()}-${m}`;
         opt.textContent = opt.value;
-        if (i === 0) opt.selected = true;
+        if (i===0) opt.selected = true;
         monthFilter.appendChild(opt);
       }
     }
 
     function renderTable() {
       tbody.innerHTML = "";
-      let sumGoods = 0, sumShip = 0;
-      const q = searchInput.value.toLowerCase();
-      const sel = monthFilter.value;
-      allRecords.map((r, i) => ({...r, idx: i}))
-        .filter(r => {
+      let sumG=0, sumS=0;
+      const q = searchInput.value.toLowerCase(), sel=monthFilter.value;
+      allRecords.map((r,i)=>({...r,idx:i}))
+        .filter(r=> {
           const txt = Object.values(r).join(" ").toLowerCase();
-          return txt.includes(q) && (sel === "all" || r.date.startsWith(sel));
+          return txt.includes(q) && (sel==="all"||r.date.startsWith(sel));
         })
-        .forEach(r => {
-          sumGoods += r.cost * r.quantity;
-          sumShip += r.shipping;
+        .forEach(r=>{
+          sumG += r.cost*r.quantity;
+          sumS += r.shipping;
           const est = r.arrivalDays
-            ? new Date(new Date(r.date).getTime() + r.arrivalDays*86400000).toISOString().slice(0,10)
+            ? new Date(new Date(r.date).getTime()+r.arrivalDays*86400000).toISOString().slice(0,10)
             : "";
           const tr = document.createElement("tr");
-          tr.innerHTML = `
+          tr.innerHTML=`
             <td title="${r.date}">${r.date.slice(5)}</td>
             <td>${r.item}</td>
             <td>${r.quantity}</td>
@@ -145,64 +140,58 @@
             <td title="${est}">${est.slice(5)}</td>
             <td>$${r.cost.toFixed(2)}</td>
             <td>$${r.shipping.toFixed(2)}</td>
-            <td>${r.url? (r.url.startsWith("http")? `<a href="${r.url}" target="_blank">查看</a>`: r.url.replace(/\n/g,"<br>")):""}</td>
+            <td>${r.url? (r.url.startsWith("http")
+                ? `<a href="${r.url}" target="_blank">查看</a>`
+                : r.url.replace(/\n/g,"<br>")): ""}</td>
             <td><input type="checkbox"></td>
             <td><button class="delete-btn" data-idx="${r.idx}">刪除</button></td>
           `;
           tbody.appendChild(tr);
-          tr.querySelector(".delete-btn").addEventListener("click", () => {
-            lastDeleted = allRecords.splice(r.idx,1)[0];
-            renderTable();
-          });
-
-          // 雙擊編輯功能，不變
+          tr.querySelector(".delete-btn")
+            .addEventListener("click", () => {
+              lastDeleted = allRecords.splice(r.idx,1)[0];
+              renderTable();
+            });
           const mapIdx = {date:0,item:1,quantity:2,arrivalDays:3,cost:5,shipping:6,url:7};
-          Object.entries(mapIdx).forEach(([f,ci]) => {
-            const cell = tr.children[ci];
-            cell.addEventListener("dblclick",()=>{
-              const orig = r[f]||"";
-              const inp = document.createElement("input");
-              inp.type = f==="date" ? "date" : (typeof orig==="number"?"number":"text");
-              inp.value = orig;
-              inp.style.width = "100%";
+          Object.entries(mapIdx).forEach(([f,ci])=>{
+            const cell=tr.children[ci];
+            cell.addEventListener("dblclick", ()=>{
+              const orig=r[f]||"";
+              const inp=document.createElement("input");
+              inp.type = f==="date"?"date":(typeof orig==="number"?"number":"text");
+              inp.value=orig; inp.style.width="100%";
               inp.addEventListener("keydown",e=>{
                 if(e.key==="Enter") inp.blur();
-                if(e.key==="Escape") cell.innerHTML = orig;
+                if(e.key==="Escape") cell.innerHTML=orig;
               });
               inp.addEventListener("blur",()=>{
-                const v = inp.value;
-                r[f] = ["cost","shipping","quantity","arrivalDays"].includes(f)? parseFloat(v):v;
+                const v=inp.value;
+                r[f] = ["cost","shipping","quantity","arrivalDays"].includes(f)?parseFloat(v):v;
                 renderTable();
               });
-              cell.innerHTML = "";
-              cell.appendChild(inp);
-              inp.focus();
+              cell.innerHTML=""; cell.appendChild(inp); inp.focus();
             });
           });
         });
-
-      monthlyGoods.textContent   = sumGoods.toFixed(2);
-      monthlyShipping.textContent = sumShip.toFixed(2);
-      monthlyTotal.textContent    = (sumGoods+sumShip).toFixed(2);
+      monthlyGoods.textContent   = sumG.toFixed(2);
+      monthlyShipping.textContent = sumS.toFixed(2);
+      monthlyTotal.textContent    = (sumG+sumS).toFixed(2);
     }
 
-    // 你的 Apps Script Web App URL
-    const rawURL = "https://script.google.com/macros/s/AKfycbxUt-CEJUyeg3lOulA5VoaHIFebQcLFtC8eTWT-tTtFdmACe9l4ixsxsrvycJyFqbub_w/exec";
-    // AllOrigins 免費代理前綴
-    const scriptURL = "https://api.allorigins.win/raw?url=" + encodeURIComponent(rawURL);
+    // Google Apps Script Web App URL (已开启 CORS 支持)
+    const scriptURL = "https://script.google.com/macros/s/AKfycbxUt-CEJUyeg3lOulA5VoaHIFebQcLFtC8eTWT-tTtFdmACe9l4ixsxsrvycJyFqbub_w/exec";
 
     async function loadRemoteData() {
       try {
         const res = await fetch(scriptURL);
         const data = await res.json();
-        allRecords = data.map(r => ({
-          date: r.date,
-          item: r.item,
-          quantity: Number(r.quantity),
-          arrivalDays: Number(r.arrivalDays),
-          cost: Number(r.cost),
-          shipping: Number(r.shipping),
-          url: r.url
+        allRecords = data.map(r=>({
+          date:r.date, item:r.item,
+          quantity:Number(r.quantity),
+          arrivalDays:Number(r.arrivalDays),
+          cost:Number(r.cost),
+          shipping:Number(r.shipping),
+          url:r.url
         }));
         renderTable();
       } catch(err) {
@@ -222,10 +211,10 @@
         url: form.url.value
       };
       try {
-        await fetch(scriptURL, {
-          method: "POST",
-          mode: "no-cors",
-          body: new URLSearchParams(rec)
+        await fetch(scriptURL,{
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body: JSON.stringify(rec)
         });
         form.reset();
         await loadRemoteData();
@@ -241,8 +230,8 @@
       searchInput.addEventListener("input", renderTable);
     });
 
-    function undoLastDelete(){
-      if(!lastDeleted) return alert("沒有可復原的紀錄。");
+    function undoLastDelete() {
+      if (!lastDeleted) return alert("沒有可復原的紀錄。");
       allRecords.push(lastDeleted);
       lastDeleted = null;
       renderTable();
@@ -250,3 +239,4 @@
   </script>
 </body>
 </html>
+

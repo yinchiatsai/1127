@@ -1,388 +1,254 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>採購紀錄系統</title>
-    <style>
-        body {
-            font-family: sans-serif;
-            margin: 0;
-            padding: 0;
-            background: #f9f9f9;
-        }
-
-        h1 {
-            text-align: center;
-            margin: 1rem;
-        }
-
-        .container {
-            display: flex;
-            flex-direction: row;
-            height: calc(100vh - 80px);
-            padding: 0 1rem 1rem;
-            gap: 1rem;
-        }
-
-        .form-section {
-            flex: 0 0 30%;
-            background: white;
-            padding: 1rem;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            overflow-y: auto;
-            height: 100%;
-        }
-
-        .form-group {
-            display: flex;
-            align-items: center;
-            margin: 0.5rem 0;
-        }
-
-        .form-group label {
-            width: 35%;
-            font-weight: bold;
-        }
-
-        .form-group input,
-        .form-group select {
-            flex: 1;
-            padding: 0.5rem;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            background: #f8f8f8;
-        }
-
-        .form-group input::placeholder {
-            color: #aaa;
-        }
-
-        form button {
-            width: 100%;
-            padding: 0.75rem;
-            background: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-top: 1rem;
-        }
-
-        .data-section {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        #month-filter,
-        #search {
-            width: 100%;
-            padding: 0.5rem;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            margin-bottom: 0.5rem;
-        }
-
-        .summary {
-            text-align: right;
-            font-weight: bold;
-            margin-bottom: 0.5rem;
-        }
-
-        .record-list {
-            flex: 1;
-            overflow-y: auto;
-            background: white;
-            padding: 1rem;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            table-layout: fixed;
-            word-break: break-word;
-            position: relative;
-        }
-
-        th,
-        td {
-            background: #f5f5f5;
-            padding: 0.5rem;
-            border: 1px solid #ddd;
-            text-align: left;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        table th:nth-child(2),
-        table td:nth-child(2) {
-            white-space: normal;
-            word-break: break-word;
-            overflow: visible;
-            text-overflow: clip;
-        }
-
-        thead th {
-            position: sticky;
-            top: 0;
-            background: #f0f0f0;
-            z-index: 1;
-        }
-
-        tbody tr:hover {
-            background: #f1f1f1;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>採購紀錄系統</title>
+  <style>
+    body { font-family: sans-serif; margin:0; padding:0; background:#f9f9f9; }
+    h1 { text-align:center; margin:1rem; }
+    .container { display:flex; flex-direction:row; height:calc(100vh - 80px); padding:0 1rem 1rem; gap:1rem; }
+    .form-section { flex:0 0 30%; background:white; padding:1rem; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.1); overflow-y:auto; height:100%; }
+    .form-group { display:flex; align-items:center; margin:0.5rem 0; }
+    .form-group label { width:35%; font-weight:bold; }
+    .form-group input, .form-group select { flex:1; padding:0.5rem; border:1px solid #ccc; border-radius:5px; background:#f8f8f8; }
+    .form-group input::placeholder { color:#aaa; }
+    form button { width:100%; padding:0.75rem; background:#007bff; color:white; border:none; border-radius:5px; cursor:pointer; margin-top:1rem; }
+    .data-section { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+    #month-filter, #search { width:100%; padding:0.5rem; border:1px solid #ccc; border-radius:5px; margin-bottom:0.5rem; }
+    .summary { text-align:right; font-weight:bold; margin-bottom:0.5rem; }
+    .record-list { flex:1; overflow-y:auto; background:white; padding:1rem; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.1); }
+    table { width:100%; border-collapse:collapse; table-layout:fixed; word-break:break-word; position:relative; }
+    th, td { background:#f5f5f5; padding:0.5rem; border:1px solid #ddd; text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    table th:nth-child(2), table td:nth-child(2) { white-space:normal; word-break:break-word; overflow:visible; text-overflow:clip; }
+    thead th { position:sticky; top:0; background:#f0f0f0; z-index:1; }
+    tbody tr:hover { background:#f1f1f1; }
+  </style>
 </head>
-
 <body>
-    <h1>採購紀錄系統</h1>
-    <div class="container">
-        <div class="form-section">
-            <form id="purchase-form">
-                <div class="form-group">
-                    <label for="date">📅 購買日期</label>
-                    <input type="date" id="date" required placeholder="選擇購買日期">
-                </div>
-                <div class="form-group">
-                    <label for="item">📦 品項</label>
-                    <input type="text" id="item" list="item-list" required placeholder="輸入品項名稱">
-                    <datalist id="item-list"></datalist>
-                </div>
-                <div class="form-group">
-                    <label for="quantity">🔢 數量</label>
-                    <input type="number" id="quantity" required placeholder="輸入數量（如 10）">
-                </div>
-                <div class="form-group">
-                    <label for="arrival-days">🕒 到貨天數</label>
-                    <input type="number" id="arrival-days" placeholder="預估幾天後到貨">
-                </div>
-                <div class="form-group">
-                    <label for="cost">💰 單位成本</label>
-                    <input type="number" id="cost" required placeholder="單位成本（如 25.5）" step="any">
-                </div>
-                <div class="form-group">
-                    <label for="shipping">🚚 運費</label>
-                    <input type="number" id="shipping" placeholder="本次運費（可留空）">
-                </div>
-                <div class="form-group">
-                    <label for="url">📝 網址/備註</label>
-                    <input type="text" id="url" placeholder="可輸入網址或備註內容">
-                </div>
-                <button type="submit">新增紀錄</button>
-            </form>
+  <h1>採購紀錄系統</h1>
+  <div class="container">
+    <div class="form-section">
+      <form id="purchase-form">
+        <div class="form-group">
+          <label for="date">📅 購買日期</label>
+          <input type="date" id="date" required placeholder="選擇購買日期">
         </div>
-        <div class="data-section">
-            <select id="month-filter"></select>
-            <input type="text" id="search" placeholder="搜尋關鍵字...">
-            <div class="summary">
-                貨物總成本：$<span id="monthly-goods">0</span><br>
-                運費成本：$<span id="monthly-shipping">0</span><br>
-                總成本：$<span id="monthly-total">0</span>
-            </div>
-            <div class="record-list">
-                <table id="records">
-                    <thead>
-                        <tr>
-                            <th>購買日期</th>
-                            <th>品項</th>
-                            <th>數量</th>
-                            <th>到貨天數</th>
-                            <th>預估到貨日</th>
-                            <th>成本</th>
-                            <th>運費</th>
-                            <th>網址/備註</th>
-                            <th>已進貨</th>
-                            <th>刪除</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
+        <div class="form-group">
+          <label for="item">📦 品項</label>
+          <input type="text" id="item" list="item-list" required placeholder="輸入品項名稱">
+          <datalist id="item-list"></datalist>
         </div>
+        <div class="form-group">
+          <label for="quantity">🔢 數量</label>
+          <input type="number" id="quantity" required placeholder="輸入數量（如 10）">
+        </div>
+        <div class="form-group">
+          <label for="arrival-days">🕒 到貨天數</label>
+          <input type="number" id="arrival-days" placeholder="預估幾天後到貨">
+        </div>
+        <div class="form-group">
+          <label for="cost">💰 單位成本</label>
+          <input type="number" id="cost" required placeholder="單位成本（如 25.5）" step="any">
+        </div>
+        <div class="form-group">
+          <label for="shipping">🚚 運費</label>
+          <input type="number" id="shipping" placeholder="本次運費（可留空）">
+        </div>
+        <div class="form-group">
+          <label for="url">📝 網址/備註</label>
+          <input type="text" id="url" placeholder="可輸入網址或備註內容">
+        </div>
+        <button type="submit">新增紀錄</button>
+      </form>
     </div>
-    <button onclick="undoLastDelete()"
-        style="position:fixed;bottom:10px;left:10px;background:#ffc107;color:black;border:none;padding:8px 12px;border-radius:4px;cursor:pointer;">
-        復原上一筆刪除
-    </button>
+    <div class="data-section">
+      <select id="month-filter"></select>
+      <input type="text" id="search" placeholder="搜尋關鍵字...">
+      <div class="summary">
+        貨物總成本：$<span id="monthly-goods">0</span><br>
+        運費成本：$<span id="monthly-shipping">0</span><br>
+        總成本：$<span id="monthly-total">0</span>
+      </div>
+      <div class="record-list">
+        <table id="records">
+          <thead>
+            <tr>
+              <th>購買日期</th>
+              <th>品項</th>
+              <th>數量</th>
+              <th>到貨天數</th>
+              <th>預估到貨日</th>
+              <th>成本</th>
+              <th>運費</th>
+              <th>網址/備註</th>
+              <th>已進貨</th>
+              <th>刪除</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <button onclick="undoLastDelete()"
+    style="position:fixed;bottom:10px;left:10px;background:#ffc107;color:black;border:none;padding:8px 12px;border-radius:4px;cursor:pointer;">
+    復原上一筆刪除
+  </button>
 
-    <script>
-        // 1. 基本元素宣告
-        const form = document.getElementById("purchase-form");
-        const tbody = document.querySelector("#records tbody");
-        const itemList = document.getElementById("item-list");
-        const searchInput = document.getElementById("search");
-        const monthFilter = document.getElementById("month-filter");
-        const monthlyGoodsSpan = document.getElementById("monthly-goods");
-        const monthlyShippingSpan = document.getElementById("monthly-shipping");
-        const monthlyTotalSpan = document.getElementById("monthly-total");
+  <script>
+    const form = document.getElementById("purchase-form");
+    const tbody = document.querySelector("#records tbody");
+    const itemList = document.getElementById("item-list");
+    const searchInput = document.getElementById("search");
+    const monthFilter = document.getElementById("month-filter");
+    const monthlyGoodsSpan = document.getElementById("monthly-goods");
+    const monthlyShippingSpan = document.getElementById("monthly-shipping");
+    const monthlyTotalSpan = document.getElementById("monthly-total");
 
-        let allRecords = [];
-        let lastDeleted = null;
-        let itemHistory = new Set();
+    let allRecords = [];
+    let lastDeleted = null;
+    let itemHistory = new Set();
 
-        // 2. 月份下拉
-        function generateMonthOptions() {
-            monthFilter.innerHTML = "";
-            const allOpt = document.createElement("option");
-            allOpt.value = "all";
-            allOpt.textContent = "全部月份";
-            monthFilter.appendChild(allOpt);
-            const now = new Date();
-            for (let i = 0; i < 12; i++) {
-                const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-                const m = String(d.getMonth() + 1).padStart(2, "0");
-                const opt = document.createElement("option");
-                opt.value = `${d.getFullYear()}-${m}`;
-                opt.textContent = opt.value;
-                if (i === 0) opt.selected = true;
-                monthFilter.appendChild(opt);
-            }
-        }
+    function generateMonthOptions() {
+      monthFilter.innerHTML = "";
+      const allOpt = document.createElement("option");
+      allOpt.value = "all";
+      allOpt.textContent = "全部月份";
+      monthFilter.appendChild(allOpt);
+      const now = new Date();
+      for (let i = 0; i < 12; i++) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const m = String(d.getMonth()+1).padStart(2, "0");
+        const opt = document.createElement("option");
+        opt.value = `${d.getFullYear()}-${m}`;
+        opt.textContent = opt.value;
+        if (i === 0) opt.selected = true;
+        monthFilter.appendChild(opt);
+      }
+    }
 
-        // 3. 渲染表格
-        function renderTable() {
-            tbody.innerHTML = "";
-            let goodsTotal = 0, shipTotal = 0;
-            const q = searchInput.value.toLowerCase();
-            const sel = monthFilter.value;
-            allRecords
-                .map((r, i) => ({ ...r, _i: i }))
-                .filter(r => {
-                    const txt = Object.values(r).join(" ").toLowerCase();
-                    return txt.includes(q) && (sel === "all" || r.date.startsWith(sel));
-                })
-                .forEach(r => {
-                    goodsTotal += r.cost * r.quantity;
-                    shipTotal += r.shipping;
-                    const est = r.arrivalDays
-                        ? new Date(new Date(r.date).getTime() + r.arrivalDays * 86400000)
-                            .toISOString().slice(0, 10)
-                        : "";
-                    const tr = document.createElement("tr");
-                    tr.innerHTML = `
+    function renderTable() {
+      tbody.innerHTML = "";
+      let goodsTotal = 0, shipTotal = 0;
+      const q = searchInput.value.toLowerCase();
+      const sel = monthFilter.value;
+      allRecords.map((r,i)=>({...r,_i:i}))
+        .filter(r=> {
+          const txt = Object.values(r).join(" ").toLowerCase();
+          return txt.includes(q) && (sel==="all"||r.date.startsWith(sel));
+        })
+        .forEach(r=>{
+          goodsTotal += r.cost*r.quantity;
+          shipTotal += r.shipping;
+          const est = r.arrivalDays
+            ? new Date(new Date(r.date).getTime()+r.arrivalDays*86400000).toISOString().slice(0,10)
+            : "";
+          const tr = document.createElement("tr");
+          tr.innerHTML=`
             <td title="${r.date}">${r.date.slice(5)}</td>
             <td>${r.item}</td>
             <td>${r.quantity}</td>
-            <td>${r.arrivalDays || ""}</td>
+            <td>${r.arrivalDays||""}</td>
             <td title="${est}">${est.slice(5)}</td>
             <td>$${r.cost.toFixed(2)}</td>
             <td>$${r.shipping.toFixed(2)}</td>
-            <td>${r.url ? (r.url.startsWith("http") ? `<a href="${r.url}" target="_blank">查看</a>` : r.url.replace(/\\n/g, "<br>")) : ""}</td>
+            <td>${r.url?(r.url.startsWith("http")?`<a href="${r.url}" target="_blank">查看</a>`:r.url.replace(/\n/g,"<br>")):""}</td>
             <td><input type="checkbox"></td>
             <td><button class="delete-btn" data-i="${r._i}">刪除</button></td>
           `;
-                    tbody.appendChild(tr);
-                    tr.querySelector(".delete-btn").addEventListener("click", () => {
-                        lastDeleted = allRecords.splice(r._i, 1)[0];
-                        saveLocalAndRender();
-                    });
-                    // 雙擊編輯（維持原有功能）
-                    const mapIdx = { date: 0, item: 1, quantity: 2, arrivalDays: 3, cost: 5, shipping: 6, url: 7 };
-                    Object.entries(mapIdx).forEach(([f, idx]) => {
-                        const cell = tr.children[idx];
-                        cell.addEventListener("dblclick", () => {
-                            const orig = r[f] || "";
-                            const inp = document.createElement("input");
-                            inp.type = f === "date" ? "date" : (typeof orig === "number" ? "number" : "text");
-                            inp.value = orig;
-                            inp.style.width = "100%";
-                            inp.addEventListener("keydown", e => {
-                                if (e.key === "Enter") inp.blur();
-                                if (e.key === "Escape") cell.innerHTML = orig;
-                            });
-                            inp.addEventListener("blur", () => {
-                                const v = inp.value;
-                                r[f] = ["cost", "shipping", "quantity", "arrivalDays"].includes(f) ? parseFloat(v) : v;
-                                saveLocalAndRender();
-                            });
-                            cell.innerHTML = "";
-                            cell.appendChild(inp);
-                            inp.focus();
-                        });
-                    });
-                });
-
-            monthlyGoodsSpan.textContent = goodsTotal.toFixed(2);
-            monthlyShippingSpan.textContent = shipTotal.toFixed(2);
-            monthlyTotalSpan.textContent = (goodsTotal + shipTotal).toFixed(2);
-        }
-
-        // 4. 一次性本地快取＋重新渲染
-        function saveLocalAndRender() {
-            // 如果你有 localStorage 需求，可以在這裡同步存
+          tbody.appendChild(tr);
+          tr.querySelector(".delete-btn").addEventListener("click",()=>{
+            lastDeleted=allRecords.splice(r._i,1)[0];
             renderTable();
-        }
-
-        // 5. Google Sheets API
-        const scriptURL = "https://script.google.com/macros/s/AKfycbxUt-CEJUyeg3lOulA5VoaHIFebQcLFtC8eTWT-tTtFdmACe9l4ixsxsrvycJyFqbub_w/exec";
-
-        async function loadRemoteData() {
-            try {
-                const res = await fetch(scriptURL);
-                const data = await res.json();
-                allRecords = data.map(r => ({
-                    date: r.date,
-                    item: r.item,
-                    quantity: Number(r.quantity),
-                    arrivalDays: Number(r.arrivalDays),
-                    cost: Number(r.cost),
-                    shipping: Number(r.shipping),
-                    url: r.url
-                }));
+          });
+          const mapIdx={date:0,item:1,quantity:2,arrivalDays:3,cost:5,shipping:6,url:7};
+          Object.entries(mapIdx).forEach(([f,idx])=>{
+            const cell=tr.children[idx];
+            cell.addEventListener("dblclick",()=>{
+              const orig=r[f]||"";
+              const inp=document.createElement("input");
+              inp.type=f==="date"?"date":(typeof orig==="number"?"number":"text");
+              inp.value=orig;
+              inp.style.width="100%";
+              inp.addEventListener("keydown",e=>{
+                if(e.key==="Enter") inp.blur();
+                if(e.key==="Escape") cell.innerHTML=orig;
+              });
+              inp.addEventListener("blur",()=>{
+                const v=inp.value;
+                r[f]=["cost","shipping","quantity","arrivalDays"].includes(f)?parseFloat(v):v;
                 renderTable();
-            } catch (err) {
-                console.error("讀取 Google Sheets 失敗:", err);
-            }
-        }
-
-        form.addEventListener("submit", async e => {
-            e.preventDefault();
-            const record = {
-                date: form.date.value,
-                item: form.item.value,
-                quantity: Number(form.quantity.value),
-                arrivalDays: Number(form["arrival-days"].value),
-                cost: Number(form.cost.value),
-                shipping: Number(form.shipping.value) || 0,
-                url: form.url.value
-            };
-            try {
-                await fetch(scriptURL, {
-                    method: "POST",
-                    body: JSON.stringify(record),
-                    headers: { "Content-Type": "application/json" }
-                });
-                form.reset();
-                await loadRemoteData();
-            } catch (err) {
-                console.error("送出至 Google Sheets 失敗:", err);
-            }
+              });
+              cell.innerHTML="";
+              cell.appendChild(inp);
+              inp.focus();
+            });
+          });
         });
+      monthlyGoodsSpan.textContent=goodsTotal.toFixed(2);
+      monthlyShippingSpan.textContent=shipTotal.toFixed(2);
+      monthlyTotalSpan.textContent=(goodsTotal+shipTotal).toFixed(2);
+    }
 
-        // 6. 綁定初始化
-        document.addEventListener("DOMContentLoaded", () => {
-            generateMonthOptions();
-            loadRemoteData();
-            monthFilter.addEventListener("change", renderTable);
-            searchInput.addEventListener("input", renderTable);
+    const scriptURL = "https://script.google.com/macros/s/AKfycbxUt-CEJUyeg3lOulA5VoaHIFebQcLFtC8eTWT-tTtFdmACe9l4ixsxsrvycJyFqbub_w/exec";
+
+    async function loadRemoteData() {
+      try {
+        const res = await fetch(scriptURL);
+        const data = await res.json();
+        allRecords = data.map(r=>({
+          date:r.date, item:r.item,
+          quantity:Number(r.quantity),
+          arrivalDays:Number(r.arrivalDays),
+          cost:Number(r.cost),
+          shipping:Number(r.shipping),
+          url:r.url
+        }));
+        renderTable();
+      } catch(err) {
+        console.error("讀取 Google Sheets 失敗：", err);
+      }
+    }
+
+    form.addEventListener("submit", async e=>{
+      e.preventDefault();
+      const record = {
+        date: form.date.value,
+        item: form.item.value,
+        quantity: Number(form.quantity.value),
+        arrivalDays: Number(form["arrival-days"].value)||0,
+        cost: Number(form.cost.value),
+        shipping: Number(form.shipping.value)||0,
+        url: form.url.value
+      };
+      try {
+        // 改用 no-cors + URLSearchParams 送出
+        await fetch(scriptURL, {
+          method: "POST",
+          mode: "no-cors",
+          body: new URLSearchParams(record)
         });
+        form.reset();
+        await loadRemoteData();
+      } catch(err) {
+        console.error("寫入 Google Sheets 失敗：", err);
+      }
+    });
 
-        // 7. 復原功能
-        function undoLastDelete() {
-            if (!lastDeleted) return alert("無可復原資料");
-            allRecords.push(lastDeleted);
-            lastDeleted = null;
-            saveLocalAndRender();
-        }
-    </script>
+    document.addEventListener("DOMContentLoaded", ()=>{
+      generateMonthOptions();
+      loadRemoteData();
+      monthFilter.addEventListener("change", renderTable);
+      searchInput.addEventListener("input", renderTable);
+    });
+
+    function undoLastDelete(){
+      if(!lastDeleted) return alert("沒有可復原的紀錄。");
+      allRecords.push(lastDeleted);
+      lastDeleted=null;
+      renderTable();
+    }
+  </script>
 </body>
-
 </html>
